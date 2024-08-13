@@ -7,6 +7,9 @@ from drivers import collect_driver, new_replay_buffer, collect_data
 from loggingF import logger, log_stuff
 from metrics import train_metrics
 
+tf.data.experimental.enable_debug_mode()
+tf.config.run_functions_eagerly(True)
+
 train.drop(columns=["date_close"], inplace=True)
 valid.drop(columns=["date_close"], inplace=True)
 test.drop(columns=["date_close"], inplace=True)
@@ -68,16 +71,11 @@ def train_agent(n_epochs):
         time_step = tf_env.reset()
         policy_state = agent.collect_policy.get_initial_state(
             tf_env.batch_size)
-        while not time_step.is_last():
-            time_step, policy_state = collect_driver.run(
-                time_step, policy_state)  # maximum_iterations = 1000
-            trajectories, buffer_info = next(iterator)
-            train_loss = agent.train(trajectories).loss
-            log = tf_env.envs[0].logging_buffer()
-            portfolio_valuation.append(log['portfolio_valuation'])
-
-            log_stuff(train_metrics, epoch, train_loss,
-                      log['portfolio_valuation'])
+        time_step, policy_state = collect_driver.run(time_step, policy_state)  # maximum_iterations = 1000
+        trajectories, buffer_info = next(iterator)
+        train_loss = agent.train(trajectories).loss
+        log = tf_env.envs[0].logging_buffer()
+        portfolio_valuation.append(log['portfolio_valuation'])
         logger.info(f"Epoch: {epoch}\n Train loss: {train_loss}\n Valuation: {portfolio_valuation}\n")
 
 
