@@ -84,7 +84,7 @@ class GymWrapper(py_environment.PyEnvironment):
         return self._discount_spec
 
     def logging_buffer(self):
-        return self._info_buffer[-1]
+        return self._info_buffer[-2]
 
     def change_df(self, new_start, window_size):
         self._gym_env.set_df(
@@ -94,6 +94,7 @@ class GymWrapper(py_environment.PyEnvironment):
         # Randomly select a start point for the window
         start_index = np.random.randint(0, len(self.df) - self.window_size)
         self.change_df(start_index, self.window_size)
+        print(f"New window: {start_index} - {start_index + self.window_size}\n")
         obs = self._gym_env.reset()
 
         # Check if obs is a tuple/list containing the observation array and info dict
