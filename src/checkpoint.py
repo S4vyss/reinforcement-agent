@@ -4,7 +4,7 @@ from buffers import new_replay_buffer
 import tensorflow as tf
 
 
-new_checkpoint_dir = '../checkpoints/'
+new_checkpoint_dir = '/kaggle/working/checkpoints'
 new_checkpoint_prefix = os.path.join(new_checkpoint_dir, "ckpt")
 new_checkpoint = tf.train.Checkpoint(agent=agent, rb=new_replay_buffer)
 
