@@ -126,11 +126,13 @@ class MyTradingEnv(TradingEnv):
 env = MyTradingEnv(
     name="BTCUSD",
     df=train,
-    positions=positions,  # -1 (=SHORT), 0(=OUT), +1 (=LONG)
+    positions=[-0.5, 0, 0.5],  # -1 (=SHORT), 0(=OUT), +1 (=LONG)
     trading_fees=0.01/100,  # 0.01% per stock buy / sell (Binance fees)
     # 0.0003% per timestep (one timestep = 1h here)
     borrow_interest_rate=0.0003/100,
     verbose=1,
-    reward_function=lambda history: reward_function(history))
+    reward_function=lambda history: reward_function(history),
+    windows=60
+    )
 tf_env = GymWrapper(gym_env=env, df=train, window_size=60*24)
 tf_env = tf_py_environment.TFPyEnvironment(tf_env)
