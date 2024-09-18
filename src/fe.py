@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 
 # /kaggle/input/binanceusdbtc/test.csv for kaggle notebook
-train = pd.read_csv("archive/train.csv")
-valid = pd.read_csv("archive/valid.csv")
-test = pd.read_csv("archive/test.csv")
+train = pd.read_csv("/kaggle/input/binanceusdbtc/train (2).csv")
+valid = pd.read_csv("/kaggle/input/binanceusdbtc/valid.csv")
+test = pd.read_csv("/kaggle/input/binanceusdbtc/test.csv")
 
 
 def compute_rsi(close_prices, window=14):
@@ -91,7 +91,7 @@ def feature_engineering(train, valid, test):
         df['feature_volume_momentum'] = df['volume'].diff()   # Change in volume
         # Volume Weighted Average Price
         df['feature_vwap'] = (df['close'] * df['volume']
-                            ).cumsum() / df['volume'].cumsum()
+                              ).cumsum() / df['volume'].cumsum()
 
         # Candlestick patterns and technical indicators
         df['feature_bullish_engulfing'] = detect_bullish_engulfing(
