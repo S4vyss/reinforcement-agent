@@ -4,3 +4,5 @@
 .vscode/
 *.csv
 *.log
+./checkpoints
+./src/__pycache__

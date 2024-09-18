@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 from fe import train, valid
 
-
 def calculate_bollinger_bands(prices, window=20, num_std=2):
     if len(prices) < window:
         sma = [np.nan] * len(prices)
@@ -101,9 +100,9 @@ def reward_function(history):
     if market_return < 0 and position < 0:
         # Reward for short position in a declining market
         reward += abs(market_return)
-    elif market_return > 0 and position > 0:
+    elif market_return > 0 and position > 0 or position == 0:
         reward += market_return  # Reward for long position in a rising market
-    elif market_return < 0 and position > 0:
+    elif market_return < 0 and position > 0 or position == 0:
         # Penalize for long position in a declining market
         reward -= abs(market_return)
     elif market_return > 0 and position < 0:

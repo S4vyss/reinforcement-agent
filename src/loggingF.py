@@ -1,43 +1,14 @@
-from logging import DEBUG, INFO, FileHandler, Formatter, StreamHandler, getLogger
-from metrics import train_metrics, second_metrics
+from metrics import train_metrics
+import logging
+
+logging.basicConfig(filename="logs/logs.log", filemode="w",
+                    format="%(message)s")
+
 total_iterations = 1400
 
 
-def create_logger(exp_version):
-    log_file = ("{}.log".format(exp_version))
-
-    # logger
-    logger_ = getLogger(exp_version)
-    logger_.setLevel(DEBUG)
-
-    # formatter
-    fmr = Formatter("[%(levelname)s] %(asctime)s >>\t%(message)s")
-
-    # file handler
-    fh = FileHandler(log_file)
-    fh.setLevel(DEBUG)
-    fh.setFormatter(fmr)
-
-    # stream handler
-    ch = StreamHandler()
-    ch.setLevel(INFO)
-    ch.setFormatter(fmr)
-
-    logger_.addHandler(fh)
-    logger_.addHandler(ch)
-
-
-def get_logger(exp_version):
-    return getLogger(exp_version)
-
-
-VERSION = "001"
-create_logger(VERSION)
-
-logger = get_logger(VERSION)
-
-
 def log_stuff(trajectory):
+    # logging.info(trajectory.action)
     metrics_string = str(
         [f"{metric.name}: {metric.result().numpy()}" for metric in train_metrics])
     print(

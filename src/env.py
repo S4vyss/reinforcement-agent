@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from reward import reward_function
+from reward import reward_function, calculate_reward
 from tensorflow.python.framework import tensor_spec as tensor_s
 from tf_agents.environments import py_environment
 from tf_agents.trajectories import time_step as ts
@@ -132,7 +132,7 @@ env = MyTradingEnv(
     borrow_interest_rate=0.0003/100,
     verbose=1,
     reward_function=lambda history: reward_function(history),
-    windows=60
+    windows=10
     )
 tf_env = GymWrapper(gym_env=env, df=train, window_size=60*24)
 tf_env = tf_py_environment.TFPyEnvironment(tf_env)

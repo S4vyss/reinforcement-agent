@@ -1,11 +1,14 @@
 from tf_agents.utils.common import function
-from model import agent
+import tf_agents
 from fe import train, valid, test
 from env import tf_env
 import tensorflow as tf
-from drivers import collect_driver, new_replay_buffer, collect_data
-from loggingF import logger
+from drivers import collect_driver, collect_data, test_driver, collect_data_test
 import warnings
+from model import agent
+from buffers import new_replay_buffer, replay_buffer
+from keras.optimizers.schedules import PolynomialDecay
+from checkpoint import load_checkpoint, save_checkpoint, initialize_checkpoint_manager
 
 warnings.filterwarnings("ignore")
 tf.data.experimental.enable_debug_mode()
@@ -16,16 +19,23 @@ valid.drop(columns=["date_close"], inplace=True)
 test.drop(columns=["date_close"], inplace=True)
 
 agent.initialize()
+initialize_checkpoint_manager(agent, new_replay_buffer)
+loaded = False  # load_checkpoint()
+
+random_policy = tf_agents.policies.random_tf_policy.RandomTFPolicy(tf_env.time_step_spec(),
+                                                                   tf_env.action_spec())
+
 
 # Initial data collection
-final_time_step, final_policy_state = collect_data()
+if not loaded:
+    collect_data_test(tf_env, random_policy, random_policy.get_initial_state(
+        tf_env.batch_size), replay_buffer, 1400)
 
 # Wrapping the driver and agent functions
 collect_driver.run = function(collect_driver.run)
 agent.train = function(agent.train)
 
 portfolio_valuation = []
-save_history = []
 
 
 @tf.function
@@ -43,6 +53,35 @@ def debug_train_step(experience):
     return loss_info.loss
 
 
+beta_PER_fn = PolynomialDecay(
+    initial_learning_rate=0.00,
+    end_learning_rate=1.00,
+    decay_steps=1000*1400
+)
+
+
+def test_train(n_epochs):
+    iterator = iter(test_dataset)
+
+    for epoch in range(n_epochs):
+        collect_policy = agent.collect_policy
+        policy_state = collect_policy.get_initial_state(tf_env.batch_size)
+        for i in range(1400):
+            policy_state = collect_data_test(env=tf_env, policy_state=policy_state, policy=collect_policy,
+                                             buffer=replay_buffer, steps=1)
+            trajectories, buffer_info = next(iterator)
+            learning_weights = (
+                1/(tf.clip_by_value(buffer_info.probabilities, 0.000001, 1.0)*64))**beta_PER_fn(i)
+            train_loss, extra = agent.train(
+                experience=trajectories, weights=learning_weights)
+            replay_buffer.update_batch(buffer_info.ids, extra.td_loss)
+        log = tf_env.envs[0].logging_buffer()
+        portfolio_valuation.append(log['portfolio_valuation'])
+        print(
+            f"Epoch: {epoch}\n Train loss: {train_loss}\n Valuation: {portfolio_valuation}\n")
+        save_checkpoint()
+
+
 def train_agent(n_epochs):
     iterator = iter(dataset)
 
@@ -54,10 +93,14 @@ def train_agent(n_epochs):
             time_step, policy_state)  # maximum_iterations = 1000
         trajectories, buffer_info = next(iterator)
         train_loss = agent.train(trajectories).loss
+        if tf.math.is_nan(train_loss) or train_loss > 1000:
+            print("Loss became NaN or too large. Stopping training.")
+            break
         log = tf_env.envs[0].logging_buffer()
         portfolio_valuation.append(log['portfolio_valuation'])
-        logger.info(
+        print(
             f"Epoch: {epoch}\n Train loss: {train_loss}\n Valuation: {portfolio_valuation}\n")
+        save_checkpoint()
 
 
 dataset = new_replay_buffer.as_dataset(
@@ -66,4 +109,9 @@ dataset = new_replay_buffer.as_dataset(
     num_parallel_calls=tf.data.experimental.AUTOTUNE
 ).prefetch(tf.data.experimental.AUTOTUNE)
 
-train_agent(1_000)
+test_dataset = replay_buffer.as_dataset(
+    num_parallel_calls=3,
+    sample_batch_size=64,
+    num_steps=2).prefetch(3)
+
+test_train(1000)

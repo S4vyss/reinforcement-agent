@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 
-train = pd.read_csv("/kaggle/input/binanceusdbtc/train (2).csv")
-valid = pd.read_csv("/kaggle/input/binanceusdbtc/valid.csv")
-test = pd.read_csv("/kaggle/input/binanceusdbtc/test.csv")
+# /kaggle/input/binanceusdbtc/test.csv for kaggle notebook
+train = pd.read_csv("archive/train.csv")
+valid = pd.read_csv("archive/valid.csv")
+test = pd.read_csv("archive/test.csv")
 
 
 def compute_rsi(close_prices, window=14):
